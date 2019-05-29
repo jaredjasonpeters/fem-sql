@@ -4,7 +4,7 @@ import { sql } from '../sql-string';
 /**
  * Columns to SELECT for the getAllCustomers query
  */
-const ALL_CUSTOMERS_COLUMNS = ['*'];
+const ALL_CUSTOMERS_COLUMNS = ['Id', 'ContactName', 'CompanyName'];
 
 /**
  * Options that may be used to customize a query for a collection of Customers
@@ -22,9 +22,18 @@ const ALL_CUSTOMERS_COLUMNS = ['*'];
  */
 export async function getAllCustomers(options = {}) {
   const db = await getDb();
+  let whereClause = '';
+  if (options.filter) {
+    whereClause = sql`WHERE (lower(contactname) LIKE lower('%${options.filter}%')) 
+    OR (lower(companyname) LIKE  lower('%${options.filter}%'))`;
+  }
   return await db.all(sql`
-SELECT ${ALL_CUSTOMERS_COLUMNS.join(',')}
-FROM Customer`);
+    SELECT ${ALL_CUSTOMERS_COLUMNS.map(x => `c.${x}`).join(',')}, count(co.id) AS ordercount
+    FROM Customer AS c
+    LEFT JOIN CustomerOrder AS co ON co.customerid = c.id
+    ${whereClause}
+    GROUP BY c.id
+    `);
 }
 
 /**

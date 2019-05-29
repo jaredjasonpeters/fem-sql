@@ -4,7 +4,7 @@ import { sql } from '../sql-string';
 /**
  * Columns to select in the `getAllSuppliers` query
  */
-const ALL_SUPPLIERS_COLUMNS = ['*'];
+const ALL_SUPPLIERS_COLUMNS = ['Id', 'ContactName', 'CompanyName'];
 
 /**
  * Retrieve a collection of all Supplier records from the database
@@ -12,9 +12,15 @@ const ALL_SUPPLIERS_COLUMNS = ['*'];
  */
 export async function getAllSuppliers() {
   const db = await getDb();
+  let productList = sql`string_agg(p.productname, ', ')`;
   return await db.all(sql`
-SELECT ${ALL_SUPPLIERS_COLUMNS.join(',')}
-FROM Supplier`);
+SELECT ${ALL_SUPPLIERS_COLUMNS.map(x => `s.${x}`).join(',')}, 
+${productList ? `${productList}` : ''} AS productlist
+FROM Supplier as s
+LEFT JOIN Product as p
+ON s.id = p.supplierid
+GROUP BY s.id
+`);
 }
 
 /**

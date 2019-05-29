@@ -4,7 +4,15 @@ import { sql } from '../sql-string';
 /**
  * Columns to select for the `getAllEmployees` query
  */
-const ALL_EMPLOYEES_COLUMNS = ['*'];
+const ALL_EMPLOYEES_COLUMNS = [
+  'Id',
+  'FirstName',
+  'LastName',
+  'Region',
+  'HireDate',
+  'Title',
+  'reportsto'
+];
 
 /**
  * Retrieve a collection of all Employee records in the database
@@ -13,8 +21,13 @@ const ALL_EMPLOYEES_COLUMNS = ['*'];
 export async function getAllEmployees() {
   const db = await getDb();
   return await db.all(sql`
-SELECT ${ALL_EMPLOYEES_COLUMNS.join(',')}
-FROM Employee`);
+SELECT ${ALL_EMPLOYEES_COLUMNS.map(x => `e.${x}`).join(',')}, count(co.id) AS ordercount
+FROM Employee as e
+RIGHT JOIN CustomerOrder as co
+ON e.id = co.employeeid
+GROUP BY e.id
+
+`);
 }
 
 /**
